@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useRef, ReactNode } fro
 import { useNavigate } from 'react-router-dom';
 import * as authService from '@/services/auth.service';
 import { configureApi } from '@/services/api';
+import { toast } from '@/components/ui/use-toast';
 import type { User, LoginRequest, RegisterRequest } from '@/types';
 
 interface AuthState {
@@ -53,6 +54,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         accessTokenRef.current = null;
         localStorage.removeItem(REFRESH_TOKEN_KEY);
         setState({ user: null, isAuthenticated: false, isLoading: false });
+        toast({
+          variant: 'destructive',
+          title: 'Session expired',
+          description: 'Your session is no longer valid. Please sign in again.',
+        });
         navigate('/login');
       },
     });
