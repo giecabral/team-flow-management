@@ -32,14 +32,25 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
 // Response interceptor: handle 401 and refresh
 let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = [];
 
-function subscribeTokenRefresh(cb: (token: string) => void) {
-  refreshSubscribers.push(cb);
+type RefreshSubscriber = {
+  resolve: (token: string) => void;
+  reject: (err: unknown) => void;
+};
+
+let refreshSubscribers: RefreshSubscriber[] = [];
+
+function subscribeTokenRefresh(resolve: (token: string) => void, reject: (err: unknown) => void) {
+  refreshSubscribers.push({ resolve, reject });
 }
 
 function onTokenRefreshed(token: string) {
-  refreshSubscribers.forEach((cb) => cb(token));
+  refreshSubscribers.forEach(({ resolve }) => resolve(token));
+  refreshSubscribers = [];
+}
+
+function onRefreshFailed(err: unknown) {
+  refreshSubscribers.forEach(({ reject }) => reject(err));
   refreshSubscribers = [];
 }
 
@@ -48,13 +59,20 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Never retry the refresh endpoint itself — avoids infinite 401 loop
+    const isRefreshEndpoint = originalRequest.url?.includes('/auth/refresh');
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isRefreshEndpoint) {
       if (isRefreshing) {
-        return new Promise((resolve) => {
-          subscribeTokenRefresh((token: string) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            resolve(api(originalRequest));
-          });
+        // Queue until the in-flight refresh resolves or fails
+        return new Promise((resolve, reject) => {
+          subscribeTokenRefresh(
+            (token: string) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              resolve(api(originalRequest));
+            },
+            reject
+          );
         });
       }
 
@@ -69,7 +87,8 @@ api.interceptors.response.use(
           return api(originalRequest);
         }
         throw new Error('No token returned');
-      } catch {
+      } catch (refreshError) {
+        onRefreshFailed(refreshError);
         onAuthFailure();
         return Promise.reject(error);
       } finally {
