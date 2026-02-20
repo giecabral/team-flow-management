@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import * as tasksService from '@/services/tasks.service';
 import * as teamsService from '@/services/teams.service';
+import * as usersService from '@/services/users.service';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,7 +20,7 @@ import {
   CalendarDays, MessageSquare, Plus, ListTodo,
 } from 'lucide-react';
 import type {
-  TaskWithDetails, TaskStatus, TaskPriority, TeamWithRole, TeamMember,
+  TaskWithDetails, TaskStatus, TaskPriority, TeamWithRole, User,
 } from '@/types';
 
 const PRIORITY_DOT: Record<TaskPriority, string> = {
@@ -75,36 +76,26 @@ const EMPTY_FORM: CreateForm = {
 export default function GlobalTasksPage() {
   const [tasks, setTasks] = useState<TaskWithDetails[]>([]);
   const [teams, setTeams] = useState<TeamWithRole[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
   const [teamFilter, setTeamFilter] = useState<string>('all');
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     Promise.all([
       tasksService.listGlobalTasks(),
       teamsService.getTeams(),
+      usersService.listUsers(),
     ])
-      .then(([t, tm]) => { setTasks(t); setTeams(tm); })
+      .then(([t, tm, u]) => { setTasks(t); setTeams(tm); setAllUsers(u); })
       .catch(() => toast({ variant: 'destructive', title: 'Error', description: 'Failed to load tasks' }))
       .finally(() => setIsLoading(false));
   }, []);
 
-  // Load team members when team is selected in create dialog
-  useEffect(() => {
-    if (!form.teamId) {
-      setTeamMembers([]);
-      setForm((f) => ({ ...f, assignedTo: '' }));
-      return;
-    }
-    teamsService.getTeamMembers(form.teamId)
-      .then(setTeamMembers)
-      .catch(() => setTeamMembers([]));
-  }, [form.teamId]);
 
   const filteredTasks = tasks.filter((t) => {
     if (statusFilter !== 'all' && t.status !== statusFilter) return false;
@@ -360,24 +351,22 @@ export default function GlobalTasksPage() {
               </select>
             </div>
 
-            {/* Assignee — only shown when team is selected */}
-            {form.teamId && (
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Assignee (optional)</label>
-                <select
-                  className="w-full border rounded-md px-3 py-2 text-sm bg-background"
-                  value={form.assignedTo}
-                  onChange={(e) => setForm((f) => ({ ...f, assignedTo: e.target.value }))}
-                >
-                  <option value="">Unassigned</option>
-                  {teamMembers.map((m) => (
-                    <option key={m.userId} value={m.userId}>
-                      {m.user ? `${m.user.firstName} ${m.user.lastName}` : m.userId}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            {/* Assignee — always shown, any user can be assigned */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Assignee (optional)</label>
+              <select
+                className="w-full border rounded-md px-3 py-2 text-sm bg-background"
+                value={form.assignedTo}
+                onChange={(e) => setForm((f) => ({ ...f, assignedTo: e.target.value }))}
+              >
+                <option value="">Unassigned</option>
+                {allUsers.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.firstName} {u.lastName}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <DialogFooter>

@@ -3,13 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import * as tasksService from '@/services/tasks.service';
 import * as teamsService from '@/services/teams.service';
+import * as usersService from '@/services/users.service';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
 import { ArrowLeft, Trash2, Pencil, Check, X, Send } from 'lucide-react';
-import type { TaskWithDetails, TaskComment, TaskStatus, TaskPriority, TeamMember, TeamRole } from '@/types';
+import type { TaskWithDetails, TaskComment, TaskStatus, TaskPriority, TeamMember, TeamRole, User } from '@/types';
 
 const PRIORITY_BADGE: Record<TaskPriority, string> = {
   high: 'bg-red-100 text-red-700',
@@ -39,6 +40,7 @@ export default function TaskDetailPage() {
   const [task, setTask] = useState<TaskWithDetails | null>(null);
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [members, setMembers] = useState<TeamMember[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
   const [currentUserRole, setCurrentUserRole] = useState<TeamRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -96,7 +98,7 @@ export default function TaskDetailPage() {
     }
   };
 
-  const startEditing = () => {
+  const startEditing = async () => {
     if (!task) return;
     setEditTitle(task.title);
     setEditDescription(task.description ?? '');
@@ -104,6 +106,11 @@ export default function TaskDetailPage() {
     setEditPriority(task.priority);
     setEditDueDate(task.dueDate ?? '');
     setEditAssignedTo(task.assignedTo ?? '');
+    // In global context, fetch the full user list for the assignee dropdown
+    if (isGlobal && allUsers.length === 0) {
+      const users = await usersService.listUsers().catch(() => []);
+      setAllUsers(users);
+    }
     setIsEditing(true);
   };
 
@@ -203,6 +210,10 @@ export default function TaskDetailPage() {
   const canEdit = isGlobal
     ? (task.createdBy === user?.id || task.assignedTo === user?.id)
     : (currentUserRole === 'admin' || task.assignedTo === user?.id);
+
+  // Only admin/manager can change who a task is assigned to in team context.
+  // In global context anyone who can edit the task can reassign it.
+  const canEditAssignee = isGlobal || currentUserRole === 'admin' || currentUserRole === 'manager';
 
   const backPath = isGlobal ? '/tasks' : `/teams/${teamId}/tasks`;
 
@@ -317,18 +328,24 @@ export default function TaskDetailPage() {
 
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Assignee</Label>
-              {isEditing && members.length > 0 ? (
+              {isEditing && canEditAssignee ? (
                 <select
                   value={editAssignedTo}
                   onChange={(e) => setEditAssignedTo(e.target.value)}
                   className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   <option value="">Unassigned</option>
-                  {members.map((m) => (
-                    <option key={m.userId} value={m.userId}>
-                      {m.user?.firstName} {m.user?.lastName}
-                    </option>
-                  ))}
+                  {isGlobal
+                    ? allUsers.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.firstName} {u.lastName}
+                        </option>
+                      ))
+                    : members.map((m) => (
+                        <option key={m.userId} value={m.userId}>
+                          {m.user?.firstName} {m.user?.lastName}
+                        </option>
+                      ))}
                 </select>
               ) : task.assignedUser ? (
                 <div className="flex items-center gap-2">

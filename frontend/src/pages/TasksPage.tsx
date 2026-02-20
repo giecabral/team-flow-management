@@ -39,6 +39,7 @@ function isOverdue(dueDate: string | null): boolean {
 }
 
 const CAN_CREATE_ROLES: TeamRole[] = ['admin', 'manager', 'dev'];
+const CAN_ASSIGN_OTHERS: TeamRole[] = ['admin', 'manager'];
 
 export default function TasksPage() {
   const { teamId } = useParams<{ teamId: string }>();
@@ -86,13 +87,16 @@ export default function TasksPage() {
     }
   };
 
+  const canAssignOthers = !!currentUserRole && CAN_ASSIGN_OTHERS.includes(currentUserRole);
+
   const openCreateDialog = (columnStatus: TaskStatus) => {
     setStatus(columnStatus);
     setTitle('');
     setDescription('');
     setPriority('medium');
     setDueDate('');
-    setAssignedTo('');
+    // dev can only assign to themselves; admin/manager can pick anyone
+    setAssignedTo(canAssignOthers ? '' : (user?.id ?? ''));
     setDialogOpen(true);
   };
 
@@ -318,19 +322,30 @@ export default function TasksPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="assignedTo">Assignee</Label>
-                  <select
-                    id="assignedTo"
-                    value={assignedTo}
-                    onChange={(e) => setAssignedTo(e.target.value)}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  >
-                    <option value="">Unassigned</option>
-                    {members.map((m) => (
-                      <option key={m.userId} value={m.userId}>
-                        {m.user?.firstName} {m.user?.lastName}
-                      </option>
-                    ))}
-                  </select>
+                  {canAssignOthers ? (
+                    <select
+                      id="assignedTo"
+                      value={assignedTo}
+                      onChange={(e) => setAssignedTo(e.target.value)}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    >
+                      <option value="">Unassigned</option>
+                      {members.map((m) => (
+                        <option key={m.userId} value={m.userId}>
+                          {m.user?.firstName} {m.user?.lastName}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="rounded-md border border-input bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                      {(() => {
+                        const self = members.find((m) => m.userId === user?.id);
+                        return self?.user
+                          ? `${self.user.firstName} ${self.user.lastName} (you)`
+                          : 'You';
+                      })()}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
