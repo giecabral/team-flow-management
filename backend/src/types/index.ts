@@ -1,5 +1,7 @@
 import { Request } from 'express';
 
+export type TeamRole = 'admin' | 'manager' | 'dev' | 'guest';
+
 // Database row types
 export interface UserRow {
   id: string;
@@ -24,7 +26,7 @@ export interface TeamMemberRow {
   id: string;
   team_id: string;
   user_id: string;
-  role: 'admin' | 'member';
+  role: TeamRole;
   joined_at: string;
 }
 
@@ -59,13 +61,13 @@ export interface TeamMember {
   id: string;
   teamId: string;
   userId: string;
-  role: 'admin' | 'member';
+  role: TeamRole;
   joinedAt: string;
   user?: User;
 }
 
 export interface TeamWithRole extends Team {
-  role: 'admin' | 'member';
+  role: TeamRole;
   memberCount?: number;
 }
 
@@ -76,7 +78,7 @@ export interface AuthRequest extends Request {
     email: string;
   };
   teamMembership?: {
-    role: 'admin' | 'member';
+    role: TeamRole;
   };
 }
 

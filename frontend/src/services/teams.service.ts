@@ -1,5 +1,5 @@
 import api from './api';
-import type { Team, TeamMember, TeamWithRole, User, ApiResponse } from '@/types';
+import type { Team, TeamMember, TeamRole, TeamWithRole, User, ApiResponse } from '@/types';
 
 export async function getTeams(): Promise<TeamWithRole[]> {
   const response = await api.get<ApiResponse<TeamWithRole[]>>('/teams');
@@ -32,7 +32,7 @@ export async function getTeamMembers(teamId: string): Promise<TeamMember[]> {
 
 export async function addTeamMember(
   teamId: string,
-  data: { userId: string; role?: 'admin' | 'member' }
+  data: { userId: string; role?: TeamRole }
 ): Promise<TeamMember> {
   const response = await api.post<ApiResponse<TeamMember>>(`/teams/${teamId}/members`, data);
   return response.data.data!;
@@ -41,7 +41,7 @@ export async function addTeamMember(
 export async function updateMemberRole(
   teamId: string,
   userId: string,
-  role: 'admin' | 'member'
+  role: TeamRole
 ): Promise<TeamMember> {
   const response = await api.patch<ApiResponse<TeamMember>>(
     `/teams/${teamId}/members/${userId}`,

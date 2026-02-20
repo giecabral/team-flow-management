@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import db from '../config/database.js';
-import type { TeamRow, TeamMemberRow, Team, TeamMember, TeamWithRole, User, UserRow } from '../types/index.js';
+import type { TeamRow, TeamMemberRow, Team, TeamMember, TeamWithRole, User, UserRow, TeamRole } from '../types/index.js';
 
 function toTeam(row: TeamRow): Team {
   return {
@@ -54,7 +54,7 @@ export function getUserTeams(userId: string): TeamWithRole[] {
     JOIN team_members tm ON tm.team_id = t.id
     WHERE tm.user_id = ?
     ORDER BY t.created_at DESC
-  `).all(userId) as (TeamRow & { role: 'admin' | 'member'; member_count: number })[];
+  `).all(userId) as (TeamRow & { role: TeamRole; member_count: number })[];
 
   return rows.map((row) => ({
     ...toTeam(row),
@@ -69,7 +69,6 @@ export function createTeam(name: string, description: string | null, createdBy: 
   const memberId = uuidv4();
 
   db.transaction(() => {
-    // Create team
     db.prepare(`
       INSERT INTO teams (id, name, description, created_by)
       VALUES (?, ?, ?, ?)
@@ -140,25 +139,17 @@ export function getTeamMembers(teamId: string): TeamMember[] {
 }
 
 // Add member to team
-export function addMember(teamId: string, userId: string, role: 'admin' | 'member'): TeamMember {
-  // Check if user exists
+export function addMember(teamId: string, userId: string, role: TeamRole): TeamMember {
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as UserRow | undefined;
   if (!user) {
-    throw Object.assign(new Error('User not found'), {
-      statusCode: 404,
-      code: 'USER_NOT_FOUND',
-    });
+    throw Object.assign(new Error('User not found'), { statusCode: 404, code: 'USER_NOT_FOUND' });
   }
 
-  // Check if already a member
   const existing = db.prepare(
     'SELECT id FROM team_members WHERE team_id = ? AND user_id = ?'
   ).get(teamId, userId);
   if (existing) {
-    throw Object.assign(new Error('User is already a team member'), {
-      statusCode: 409,
-      code: 'ALREADY_MEMBER',
-    });
+    throw Object.assign(new Error('User is already a team member'), { statusCode: 409, code: 'ALREADY_MEMBER' });
   }
 
   const id = uuidv4();
@@ -178,16 +169,13 @@ export function addMember(teamId: string, userId: string, role: 'admin' | 'membe
 }
 
 // Update member role
-export function updateMemberRole(teamId: string, userId: string, role: 'admin' | 'member'): TeamMember {
+export function updateMemberRole(teamId: string, userId: string, role: TeamRole): TeamMember {
   const result = db.prepare(`
     UPDATE team_members SET role = ? WHERE team_id = ? AND user_id = ?
   `).run(role, teamId, userId);
 
   if (result.changes === 0) {
-    throw Object.assign(new Error('Team member not found'), {
-      statusCode: 404,
-      code: 'MEMBER_NOT_FOUND',
-    });
+    throw Object.assign(new Error('Team member not found'), { statusCode: 404, code: 'MEMBER_NOT_FOUND' });
   }
 
   const row = db.prepare(`
@@ -202,7 +190,6 @@ export function updateMemberRole(teamId: string, userId: string, role: 'admin' |
 
 // Remove member from team
 export function removeMember(teamId: string, userId: string): void {
-  // Check if this is the last admin
   const adminCount = db.prepare(`
     SELECT COUNT(*) as count FROM team_members
     WHERE team_id = ? AND role = 'admin'
@@ -213,17 +200,11 @@ export function removeMember(teamId: string, userId: string): void {
   `).get(teamId, userId) as { role: string } | undefined;
 
   if (!member) {
-    throw Object.assign(new Error('Team member not found'), {
-      statusCode: 404,
-      code: 'MEMBER_NOT_FOUND',
-    });
+    throw Object.assign(new Error('Team member not found'), { statusCode: 404, code: 'MEMBER_NOT_FOUND' });
   }
 
   if (member.role === 'admin' && adminCount.count <= 1) {
-    throw Object.assign(new Error('Cannot remove the last admin'), {
-      statusCode: 400,
-      code: 'LAST_ADMIN',
-    });
+    throw Object.assign(new Error('Cannot remove the last admin'), { statusCode: 400, code: 'LAST_ADMIN' });
   }
 
   db.prepare('DELETE FROM team_members WHERE team_id = ? AND user_id = ?').run(teamId, userId);

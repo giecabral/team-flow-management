@@ -18,11 +18,28 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from '@/components/ui/use-toast';
-import { ArrowLeft, MoreVertical, UserPlus, Shield, User, Trash2 } from 'lucide-react';
-import type { Team, TeamMember, User as UserType } from '@/types';
+import { ArrowLeft, MoreVertical, UserPlus, Trash2 } from 'lucide-react';
+import type { Team, TeamMember, TeamRole, User as UserType } from '@/types';
+
+const ALL_ROLES: TeamRole[] = ['admin', 'manager', 'dev', 'guest'];
+
+const ROLE_LABELS: Record<TeamRole, string> = {
+  admin: 'Admin',
+  manager: 'Manager',
+  dev: 'Developer',
+  guest: 'Guest',
+};
+
+const ROLE_BADGE_CLASS: Record<TeamRole, string> = {
+  admin: 'bg-primary/10 text-primary',
+  manager: 'bg-purple-100 text-purple-700',
+  dev: 'bg-blue-100 text-blue-700',
+  guest: 'bg-muted text-muted-foreground',
+};
 
 export default function TeamDetailPage() {
   const { teamId } = useParams<{ teamId: string }>();
@@ -32,13 +49,14 @@ export default function TeamDetailPage() {
   const [team, setTeam] = useState<Team | null>(null);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentUserRole, setCurrentUserRole] = useState<'admin' | 'member' | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<TeamRole | null>(null);
 
   const [addMemberDialogOpen, setAddMemberDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserType[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isAddingMember, setIsAddingMember] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<TeamRole>('dev');
 
   useEffect(() => {
     if (teamId) {
@@ -59,7 +77,7 @@ export default function TeamDetailPage() {
 
       const currentMember = membersData.find((m) => m.userId === user?.id);
       setCurrentUserRole(currentMember?.role || null);
-    } catch (error) {
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -92,14 +110,15 @@ export default function TeamDetailPage() {
   const handleAddMember = async (userId: string) => {
     setIsAddingMember(true);
     try {
-      const newMember = await teamsService.addTeamMember(teamId!, { userId, role: 'member' });
+      const newMember = await teamsService.addTeamMember(teamId!, { userId, role: selectedRole });
       setMembers((prev) => [...prev, newMember]);
       setAddMemberDialogOpen(false);
       setSearchQuery('');
       setSearchResults([]);
+      setSelectedRole('dev');
       toast({
         title: 'Member added',
-        description: 'The user has been added to the team.',
+        description: `Added as ${ROLE_LABELS[selectedRole]}.`,
       });
     } catch {
       toast({
@@ -112,7 +131,7 @@ export default function TeamDetailPage() {
     }
   };
 
-  const handleRoleChange = async (memberId: string, userId: string, newRole: 'admin' | 'member') => {
+  const handleRoleChange = async (memberId: string, userId: string, newRole: TeamRole) => {
     try {
       await teamsService.updateMemberRole(teamId!, userId, newRole);
       setMembers((prev) =>
@@ -120,7 +139,7 @@ export default function TeamDetailPage() {
       );
       toast({
         title: 'Role updated',
-        description: `Member role changed to ${newRole}.`,
+        description: `Role changed to ${ROLE_LABELS[newRole]}.`,
       });
     } catch {
       toast({
@@ -173,7 +192,7 @@ export default function TeamDetailPage() {
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
   }
@@ -224,14 +243,14 @@ export default function TeamDetailPage() {
             {members.map((member) => (
               <div key={member.id} className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">
                     {member.user?.firstName?.charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <p className="font-medium">
                       {member.user?.firstName} {member.user?.lastName}
                       {member.userId === user?.id && (
-                        <span className="text-muted-foreground ml-2">(you)</span>
+                        <span className="text-muted-foreground ml-2 text-sm">(you)</span>
                       )}
                     </p>
                     <p className="text-sm text-muted-foreground">{member.user?.email}</p>
@@ -239,13 +258,9 @@ export default function TeamDetailPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`text-xs px-2 py-1 rounded-full ${
-                      member.role === 'admin'
-                        ? 'bg-primary/10 text-primary'
-                        : 'bg-muted text-muted-foreground'
-                    }`}
+                    className={`text-xs px-2 py-1 rounded-full font-medium ${ROLE_BADGE_CLASS[member.role]}`}
                   >
-                    {member.role}
+                    {ROLE_LABELS[member.role]}
                   </span>
                   {isAdmin && member.userId !== user?.id && (
                     <DropdownMenu>
@@ -255,21 +270,15 @@ export default function TeamDetailPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {member.role === 'member' ? (
+                        {ALL_ROLES.filter((r) => r !== member.role).map((role) => (
                           <DropdownMenuItem
-                            onClick={() => handleRoleChange(member.id, member.userId, 'admin')}
+                            key={role}
+                            onClick={() => handleRoleChange(member.id, member.userId, role)}
                           >
-                            <Shield className="h-4 w-4 mr-2" />
-                            Make Admin
+                            Set as {ROLE_LABELS[role]}
                           </DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem
-                            onClick={() => handleRoleChange(member.id, member.userId, 'member')}
-                          >
-                            <User className="h-4 w-4 mr-2" />
-                            Make Member
-                          </DropdownMenuItem>
-                        )}
+                        ))}
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="text-destructive"
                           onClick={() => handleRemoveMember(member.userId)}
@@ -287,15 +296,40 @@ export default function TeamDetailPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={addMemberDialogOpen} onOpenChange={setAddMemberDialogOpen}>
+      <Dialog
+        open={addMemberDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSearchQuery('');
+            setSearchResults([]);
+            setSelectedRole('dev');
+          }
+          setAddMemberDialogOpen(open);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Team Member</DialogTitle>
             <DialogDescription>
-              Search for users to add to this team.
+              Search for users and assign them a role on this team.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <select
+                id="role"
+                value={selectedRole}
+                onChange={(e) => setSelectedRole(e.target.value as TeamRole)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              >
+                {ALL_ROLES.map((role) => (
+                  <option key={role} value={role}>
+                    {ROLE_LABELS[role]}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="search">Search Users</Label>
               <Input
@@ -308,7 +342,7 @@ export default function TeamDetailPage() {
             <div className="max-h-60 overflow-y-auto">
               {isSearching ? (
                 <div className="flex justify-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
                 </div>
               ) : searchResults.length > 0 ? (
                 <div className="divide-y">
@@ -318,7 +352,7 @@ export default function TeamDetailPage() {
                       className="flex items-center justify-between py-2"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-medium">
                           {searchUser.firstName?.charAt(0).toUpperCase()}
                         </div>
                         <div>
@@ -341,9 +375,7 @@ export default function TeamDetailPage() {
                   ))}
                 </div>
               ) : searchQuery.length >= 2 ? (
-                <p className="text-center text-muted-foreground py-4">
-                  No users found
-                </p>
+                <p className="text-center text-muted-foreground py-4">No users found</p>
               ) : null}
             </div>
           </div>
