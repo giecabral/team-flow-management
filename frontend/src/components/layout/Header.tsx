@@ -31,7 +31,7 @@ export default function Header() {
               </span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuContent align="end" className="w-56 bg-white">
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium">
@@ -46,8 +46,12 @@ export default function Header() {
               Profile
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer text-destructive" onClick={logout}>
-              <LogOut className="mr-2 h-4 w-4" />
+            <DropdownMenuItem
+              className="cursor-pointer text-destructive 
+             data-[highlighted]:text-red-500 
+             data-[highlighted]:bg-red-50"
+              onClick={logout}
+            >              <LogOut className="mr-2 h-4 w-4" />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
