@@ -9,6 +9,13 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   CalendarDays, MessageSquare, Plus, ListTodo,
 } from 'lucide-react';
 import type {
@@ -171,11 +178,10 @@ export default function GlobalTasksPage() {
             <button
               key={value}
               onClick={() => setStatusFilter(value)}
-              className={`px-3 py-1.5 transition-colors ${
-                statusFilter === value
-                  ? 'bg-primary text-primary-foreground'
-                  : 'hover:bg-muted'
-              }`}
+              className={`px-3 py-1.5 transition-colors ${statusFilter === value
+                ? 'bg-primary text-primary-foreground'
+                : 'hover:bg-muted'
+                }`}
             >
               {label}
             </button>
@@ -183,17 +189,18 @@ export default function GlobalTasksPage() {
         </div>
 
         {/* Team filter */}
-        <select
-          value={teamFilter}
-          onChange={(e) => setTeamFilter(e.target.value)}
-          className="text-sm border rounded-lg px-3 py-1.5 bg-background"
-        >
-          <option value="all">All Teams</option>
-          <option value="personal">Personal</option>
-          {teams.map((t) => (
-            <option key={t.id} value={t.id}>{t.name}</option>
-          ))}
-        </select>
+        <Select value={teamFilter} onValueChange={setTeamFilter}>
+          <SelectTrigger className="w-40 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className='bg-white'>
+            <SelectItem value="all">All Teams</SelectItem>
+            <SelectItem value="personal">Personal</SelectItem>
+            {teams.map((t) => (
+              <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Task list */}
@@ -248,11 +255,10 @@ export default function GlobalTasksPage() {
                     {/* Due date */}
                     {task.dueDate && (
                       <span
-                        className={`flex items-center gap-1 text-xs flex-shrink-0 ${
-                          isOverdue(task.dueDate, task.status)
-                            ? 'text-red-500 font-medium'
-                            : 'text-muted-foreground'
-                        }`}
+                        className={`flex items-center gap-1 text-xs flex-shrink-0 ${isOverdue(task.dueDate, task.status)
+                          ? 'text-red-500 font-medium'
+                          : 'text-muted-foreground'
+                          }`}
                       >
                         <CalendarDays className="h-3 w-3" />
                         {new Date(task.dueDate).toLocaleDateString('en-US', {
