@@ -96,7 +96,7 @@ export type TaskPriority = 'low' | 'medium' | 'high';
 
 export interface TaskRow {
   id: string;
-  team_id: string;
+  team_id: string | null;
   title: string;
   description: string | null;
   status: TaskStatus;
@@ -119,7 +119,7 @@ export interface TaskCommentRow {
 
 export interface Task {
   id: string;
-  teamId: string;
+  teamId: string | null;
   title: string;
   description: string | null;
   status: TaskStatus;
