@@ -28,7 +28,7 @@ export interface AuthResponse {
 }
 
 // Team types
-export type TeamRole = 'admin' | 'member';
+export type TeamRole = 'admin' | 'manager' | 'dev' | 'guest';
 
 export interface Team {
   id: string;
