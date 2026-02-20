@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { toast } from '@/components/ui/use-toast';
 import { ArrowLeft, Trash2, Pencil, Check, X, Send } from 'lucide-react';
 import type { TaskWithDetails, TaskComment, TaskStatus, TaskPriority, TeamMember, TeamRole, User } from '@/types';
@@ -270,15 +273,16 @@ export default function TaskDetailPage() {
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Status</Label>
               {isEditing ? (
-                <select
-                  value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value as TaskStatus)}
-                  className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  <option value="todo">To Do</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="done">Done</option>
-                </select>
+                <Select value={editStatus} onValueChange={(v) => setEditStatus(v as TaskStatus)}>
+                  <SelectTrigger className="w-full h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todo">To Do</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="done">Done</SelectItem>
+                  </SelectContent>
+                </Select>
               ) : (
                 <span className={`inline-block text-xs font-medium px-2 py-1 rounded-full ${STATUS_BADGE[task.status]}`}>
                   {STATUS_LABEL[task.status]}
@@ -289,15 +293,16 @@ export default function TaskDetailPage() {
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Priority</Label>
               {isEditing ? (
-                <select
-                  value={editPriority}
-                  onChange={(e) => setEditPriority(e.target.value as TaskPriority)}
-                  className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
+                <Select value={editPriority} onValueChange={(v) => setEditPriority(v as TaskPriority)}>
+                  <SelectTrigger className="w-full h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                  </SelectContent>
+                </Select>
               ) : (
                 <span className={`inline-block text-xs font-medium px-2 py-1 rounded-full ${PRIORITY_BADGE[task.priority]}`}>
                   {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
@@ -329,24 +334,28 @@ export default function TaskDetailPage() {
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Assignee</Label>
               {isEditing && canEditAssignee ? (
-                <select
-                  value={editAssignedTo}
-                  onChange={(e) => setEditAssignedTo(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                <Select
+                  value={editAssignedTo || '__none__'}
+                  onValueChange={(v) => setEditAssignedTo(v === '__none__' ? '' : v)}
                 >
-                  <option value="">Unassigned</option>
-                  {isGlobal
-                    ? allUsers.map((u) => (
-                        <option key={u.id} value={u.id}>
-                          {u.firstName} {u.lastName}
-                        </option>
-                      ))
-                    : members.map((m) => (
-                        <option key={m.userId} value={m.userId}>
-                          {m.user?.firstName} {m.user?.lastName}
-                        </option>
-                      ))}
-                </select>
+                  <SelectTrigger className="w-full h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Unassigned</SelectItem>
+                    {isGlobal
+                      ? allUsers.map((u) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.firstName} {u.lastName}
+                          </SelectItem>
+                        ))
+                      : members.map((m) => (
+                          <SelectItem key={m.userId} value={m.userId}>
+                            {m.user?.firstName} {m.user?.lastName}
+                          </SelectItem>
+                        ))}
+                  </SelectContent>
+                </Select>
               ) : task.assignedUser ? (
                 <div className="flex items-center gap-2">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold">

@@ -22,6 +22,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from '@/components/ui/use-toast';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { ArrowLeft, MoreVertical, UserPlus, Trash2, Kanban } from 'lucide-react';
 import type { Team, TeamMember, TeamRole, User as UserType } from '@/types';
 
@@ -273,7 +276,7 @@ export default function TeamDetailPage() {
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end" className='bg-white'>
                         {ALL_ROLES.filter((r) => r !== member.role).map((role) => (
                           <DropdownMenuItem
                             key={role}
@@ -284,7 +287,9 @@ export default function TeamDetailPage() {
                         ))}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          className="text-destructive"
+                          className="text-destructive 
+                                     data-[highlighted]:text-red-500 
+                                     data-[highlighted]:bg-red-50"
                           onClick={() => handleRemoveMember(member.userId)}
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
@@ -321,18 +326,18 @@ export default function TeamDetailPage() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
-              <select
-                id="role"
-                value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value as TeamRole)}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              >
-                {ALL_ROLES.map((role) => (
-                  <option key={role} value={role}>
-                    {ROLE_LABELS[role]}
-                  </option>
-                ))}
-              </select>
+              <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as TeamRole)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ALL_ROLES.map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {ROLE_LABELS[role]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="search">Search Users</Label>

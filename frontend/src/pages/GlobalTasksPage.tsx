@@ -301,27 +301,29 @@ export default function GlobalTasksPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="text-sm font-medium">Priority</label>
-                <select
-                  className="w-full border rounded-md px-3 py-2 text-sm bg-background"
-                  value={form.priority}
-                  onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value as TaskPriority }))}
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
+                <Select value={form.priority} onValueChange={(v) => setForm((f) => ({ ...f, priority: v as TaskPriority }))}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white">
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1">
                 <label className="text-sm font-medium">Status</label>
-                <select
-                  className="w-full border rounded-md px-3 py-2 text-sm bg-background"
-                  value={form.status}
-                  onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as TaskStatus }))}
-                >
-                  <option value="todo">To Do</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="done">Done</option>
-                </select>
+                <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v as TaskStatus }))}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white">
+                    <SelectItem value="todo">To Do</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="done">Done</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -339,33 +341,41 @@ export default function GlobalTasksPage() {
             {/* Team (optional) */}
             <div className="space-y-1">
               <label className="text-sm font-medium">Team (optional)</label>
-              <select
-                className="w-full border rounded-md px-3 py-2 text-sm bg-background"
-                value={form.teamId}
-                onChange={(e) => setForm((f) => ({ ...f, teamId: e.target.value }))}
+              <Select
+                value={form.teamId || '__none__'}
+                onValueChange={(v) => setForm((f) => ({ ...f, teamId: v === '__none__' ? '' : v }))}
               >
-                <option value="">Personal (no team)</option>
-                {teams.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  <SelectItem value="__none__">Personal (no team)</SelectItem>
+                  {teams.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Assignee — always shown, any user can be assigned */}
             <div className="space-y-1">
               <label className="text-sm font-medium">Assignee (optional)</label>
-              <select
-                className="w-full border rounded-md px-3 py-2 text-sm bg-background"
-                value={form.assignedTo}
-                onChange={(e) => setForm((f) => ({ ...f, assignedTo: e.target.value }))}
+              <Select
+                value={form.assignedTo || '__none__'}
+                onValueChange={(v) => setForm((f) => ({ ...f, assignedTo: v === '__none__' ? '' : v }))}
               >
-                <option value="">Unassigned</option>
-                {allUsers.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.firstName} {u.lastName}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  <SelectItem value="__none__">Unassigned</SelectItem>
+                  {allUsers.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.firstName} {u.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
