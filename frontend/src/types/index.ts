@@ -53,6 +53,48 @@ export interface TeamWithRole extends Team {
   memberCount?: number;
 }
 
+// Task types
+export type TaskStatus = 'todo' | 'in_progress' | 'done';
+export type TaskPriority = 'low' | 'medium' | 'high';
+
+export interface Task {
+  id: string;
+  teamId: string;
+  title: string;
+  description: string | null;
+  status: TaskStatus;
+  priority: TaskPriority;
+  dueDate: string | null;
+  assignedTo: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  labels: [];
+}
+
+export interface TaskWithDetails extends Task {
+  assignedUser?: User;
+  creator: User;
+  commentCount: number;
+}
+
+export interface MyTask extends Task {
+  teamName: string;
+  creator: User;
+  assignedUser?: User;
+  commentCount: number;
+}
+
+export interface TaskComment {
+  id: string;
+  taskId: string;
+  userId: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  user?: User;
+}
+
 // API Response types
 export interface ApiResponse<T> {
   success: boolean;
