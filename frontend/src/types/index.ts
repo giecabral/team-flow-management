@@ -59,7 +59,7 @@ export type TaskPriority = 'low' | 'medium' | 'high';
 
 export interface Task {
   id: string;
-  teamId: string;
+  teamId: string | null;
   title: string;
   description: string | null;
   status: TaskStatus;
@@ -79,7 +79,7 @@ export interface TaskWithDetails extends Task {
 }
 
 export interface MyTask extends Task {
-  teamName: string;
+  teamName: string | null;
   creator: User;
   assignedUser?: User;
   commentCount: number;

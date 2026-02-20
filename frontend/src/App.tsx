@@ -12,6 +12,7 @@ import UsersPage from '@/pages/UsersPage';
 import TasksPage from '@/pages/TasksPage';
 import TaskDetailPage from '@/pages/TaskDetailPage';
 import MyTasksPage from '@/pages/MyTasksPage';
+import GlobalTasksPage from '@/pages/GlobalTasksPage';
 
 function App() {
   return (
@@ -32,6 +33,8 @@ function App() {
             <Route path="/teams/:teamId/tasks/:taskId" element={<TaskDetailPage />} />
             <Route path="/users" element={<UsersPage />} />
             <Route path="/my-tasks" element={<MyTasksPage />} />
+            <Route path="/tasks" element={<GlobalTasksPage />} />
+            <Route path="/tasks/:taskId" element={<TaskDetailPage />} />
           </Route>
         </Route>
 

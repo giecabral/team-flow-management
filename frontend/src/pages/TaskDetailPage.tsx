@@ -30,7 +30,9 @@ const STATUS_LABEL: Record<TaskStatus, string> = {
 };
 
 export default function TaskDetailPage() {
-  const { teamId, taskId } = useParams<{ teamId: string; taskId: string }>();
+  // teamId is optional — absent when accessed via /tasks/:taskId (global context)
+  const { teamId, taskId } = useParams<{ teamId?: string; taskId: string }>();
+  const isGlobal = !teamId;
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -57,24 +59,38 @@ export default function TaskDetailPage() {
   const [editingCommentText, setEditingCommentText] = useState('');
 
   useEffect(() => {
-    if (teamId && taskId) fetchData();
-  }, [teamId, taskId]);
+    if (taskId) fetchData();
+  }, [taskId, teamId]);
 
   const fetchData = async () => {
     try {
-      const [taskData, commentsData, membersData] = await Promise.all([
-        tasksService.getTask(teamId!, taskId!),
-        tasksService.listComments(teamId!, taskId!),
-        teamsService.getTeamMembers(teamId!),
-      ]);
-      setTask(taskData);
-      setComments(commentsData);
-      setMembers(membersData);
-      const me = membersData.find((m) => m.userId === user?.id);
-      setCurrentUserRole(me?.role ?? null);
+      if (isGlobal) {
+        const [taskData, commentsData] = await Promise.all([
+          tasksService.getGlobalTask(taskId!),
+          tasksService.listGlobalComments(taskId!),
+        ]);
+        setTask(taskData);
+        setComments(commentsData);
+        // For global context, if task has a team, load members for assignee editing
+        if (taskData.teamId) {
+          const membersData = await teamsService.getTeamMembers(taskData.teamId);
+          setMembers(membersData);
+        }
+      } else {
+        const [taskData, commentsData, membersData] = await Promise.all([
+          tasksService.getTask(teamId!, taskId!),
+          tasksService.listComments(teamId!, taskId!),
+          teamsService.getTeamMembers(teamId!),
+        ]);
+        setTask(taskData);
+        setComments(commentsData);
+        setMembers(membersData);
+        const me = membersData.find((m) => m.userId === user?.id);
+        setCurrentUserRole(me?.role ?? null);
+      }
     } catch {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to load task' });
-      navigate(`/teams/${teamId}/tasks`);
+      navigate(isGlobal ? '/tasks' : `/teams/${teamId}/tasks`);
     } finally {
       setIsLoading(false);
     }
@@ -94,14 +110,17 @@ export default function TaskDetailPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const updated = await tasksService.updateTask(teamId!, taskId!, {
+      const payload = {
         title: editTitle,
         description: editDescription || null,
         status: editStatus,
         priority: editPriority,
         dueDate: editDueDate || null,
         assignedTo: editAssignedTo || null,
-      });
+      };
+      const updated = isGlobal
+        ? await tasksService.updateGlobalTask(taskId!, payload)
+        : await tasksService.updateTask(teamId!, taskId!, payload);
       setTask(updated);
       setIsEditing(false);
       toast({ title: 'Task saved' });
@@ -115,9 +134,13 @@ export default function TaskDetailPage() {
   const handleDelete = async () => {
     if (!confirm('Delete this task? This cannot be undone.')) return;
     try {
-      await tasksService.deleteTask(teamId!, taskId!);
+      if (isGlobal) {
+        await tasksService.deleteGlobalTask(taskId!);
+      } else {
+        await tasksService.deleteTask(teamId!, taskId!);
+      }
       toast({ title: 'Task deleted' });
-      navigate(`/teams/${teamId}/tasks`);
+      navigate(isGlobal ? '/tasks' : `/teams/${teamId}/tasks`);
     } catch {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete task' });
     }
@@ -128,7 +151,9 @@ export default function TaskDetailPage() {
     if (!commentText.trim()) return;
     setIsPosting(true);
     try {
-      const comment = await tasksService.addComment(teamId!, taskId!, commentText.trim());
+      const comment = isGlobal
+        ? await tasksService.addGlobalComment(taskId!, commentText.trim())
+        : await tasksService.addComment(teamId!, taskId!, commentText.trim());
       setComments((prev) => [...prev, comment]);
       setCommentText('');
     } catch {
@@ -141,9 +166,9 @@ export default function TaskDetailPage() {
   const handleSaveComment = async (commentId: string) => {
     if (!editingCommentText.trim()) return;
     try {
-      const updated = await tasksService.updateComment(
-        teamId!, taskId!, commentId, editingCommentText.trim(),
-      );
+      const updated = isGlobal
+        ? await tasksService.updateGlobalComment(taskId!, commentId, editingCommentText.trim())
+        : await tasksService.updateComment(teamId!, taskId!, commentId, editingCommentText.trim());
       setComments((prev) => prev.map((c) => (c.id === commentId ? updated : c)));
       setEditingCommentId(null);
     } catch {
@@ -153,7 +178,11 @@ export default function TaskDetailPage() {
 
   const handleDeleteComment = async (commentId: string) => {
     try {
-      await tasksService.deleteComment(teamId!, taskId!, commentId);
+      if (isGlobal) {
+        await tasksService.deleteGlobalComment(taskId!, commentId);
+      } else {
+        await tasksService.deleteComment(teamId!, taskId!, commentId);
+      }
       setComments((prev) => prev.filter((c) => c.id !== commentId));
     } catch {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete comment' });
@@ -170,14 +199,18 @@ export default function TaskDetailPage() {
 
   if (!task) return null;
 
-  const canEdit =
-    currentUserRole === 'admin' || task.assignedTo === user?.id;
+  // Permission check differs by context
+  const canEdit = isGlobal
+    ? (task.createdBy === user?.id || task.assignedTo === user?.id)
+    : (currentUserRole === 'admin' || task.assignedTo === user?.id);
+
+  const backPath = isGlobal ? '/tasks' : `/teams/${teamId}/tasks`;
 
   return (
     <div className="space-y-6 max-w-3xl">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate(`/teams/${teamId}/tasks`)}>
+        <Button variant="ghost" size="icon" onClick={() => navigate(backPath)}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1 min-w-0">
@@ -284,7 +317,7 @@ export default function TaskDetailPage() {
 
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Assignee</Label>
-              {isEditing ? (
+              {isEditing && members.length > 0 ? (
                 <select
                   value={editAssignedTo}
                   onChange={(e) => setEditAssignedTo(e.target.value)}
@@ -355,7 +388,7 @@ export default function TaskDetailPage() {
 
           {comments.map((comment) => {
             const isOwnComment = comment.userId === user?.id;
-            const canEditComment = isOwnComment || currentUserRole === 'admin';
+            const canEditComment = isOwnComment || (!isGlobal && currentUserRole === 'admin');
 
             return (
               <div key={comment.id} className="flex gap-3">
