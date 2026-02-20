@@ -106,3 +106,74 @@ export async function getMyTasks(): Promise<MyTask[]> {
   const response = await api.get<ApiResponse<MyTask[]>>('/tasks/me');
   return response.data.data!;
 }
+
+// ─── Global Tasks ────────────────────────────────────────────────────────────
+
+export interface CreateGlobalTaskRequest {
+  title: string;
+  description?: string | null;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  dueDate?: string | null;
+  teamId?: string | null;
+  assignedTo?: string | null;
+}
+
+export async function listGlobalTasks(
+  filters?: { status?: TaskStatus; teamId?: string },
+): Promise<TaskWithDetails[]> {
+  const params = new URLSearchParams();
+  if (filters?.status) params.set('status', filters.status);
+  if (filters?.teamId) params.set('teamId', filters.teamId);
+  const query = params.toString() ? `?${params.toString()}` : '';
+  const response = await api.get<ApiResponse<TaskWithDetails[]>>(`/tasks${query}`);
+  return response.data.data!;
+}
+
+export async function createGlobalTask(data: CreateGlobalTaskRequest): Promise<TaskWithDetails> {
+  const response = await api.post<ApiResponse<TaskWithDetails>>('/tasks', data);
+  return response.data.data!;
+}
+
+export async function getGlobalTask(taskId: string): Promise<TaskWithDetails> {
+  const response = await api.get<ApiResponse<TaskWithDetails>>(`/tasks/${taskId}`);
+  return response.data.data!;
+}
+
+export async function updateGlobalTask(
+  taskId: string,
+  data: UpdateTaskRequest,
+): Promise<TaskWithDetails> {
+  const response = await api.patch<ApiResponse<TaskWithDetails>>(`/tasks/${taskId}`, data);
+  return response.data.data!;
+}
+
+export async function deleteGlobalTask(taskId: string): Promise<void> {
+  await api.delete(`/tasks/${taskId}`);
+}
+
+export async function listGlobalComments(taskId: string): Promise<TaskComment[]> {
+  const response = await api.get<ApiResponse<TaskComment[]>>(`/tasks/${taskId}/comments`);
+  return response.data.data!;
+}
+
+export async function addGlobalComment(taskId: string, content: string): Promise<TaskComment> {
+  const response = await api.post<ApiResponse<TaskComment>>(`/tasks/${taskId}/comments`, { content });
+  return response.data.data!;
+}
+
+export async function updateGlobalComment(
+  taskId: string,
+  commentId: string,
+  content: string,
+): Promise<TaskComment> {
+  const response = await api.patch<ApiResponse<TaskComment>>(
+    `/tasks/${taskId}/comments/${commentId}`,
+    { content },
+  );
+  return response.data.data!;
+}
+
+export async function deleteGlobalComment(taskId: string, commentId: string): Promise<void> {
+  await api.delete(`/tasks/${taskId}/comments/${commentId}`);
+}

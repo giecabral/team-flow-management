@@ -82,7 +82,7 @@ export default function MyTasksPage() {
                     {sectionTasks.map((task) => (
                       <Link
                         key={task.id}
-                        to={`/teams/${task.teamId}/tasks/${task.id}`}
+                        to={task.teamId ? `/teams/${task.teamId}/tasks/${task.id}` : `/tasks/${task.id}`}
                         className="flex items-center gap-3 py-3 hover:bg-muted/50 -mx-2 px-2 rounded-md transition-colors"
                       >
                         {/* Priority dot */}
@@ -96,7 +96,7 @@ export default function MyTasksPage() {
 
                         {/* Team badge */}
                         <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground flex-shrink-0">
-                          {task.teamName}
+                          {task.teamName ?? 'Personal'}
                         </span>
 
                         {/* Comment count */}

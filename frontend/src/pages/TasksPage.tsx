@@ -52,7 +52,6 @@ export default function TasksPage() {
   const [teamName, setTeamName] = useState('');
 
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [defaultStatus, setDefaultStatus] = useState<TaskStatus>('todo');
 
   // Form state
   const [title, setTitle] = useState('');
@@ -88,7 +87,6 @@ export default function TasksPage() {
   };
 
   const openCreateDialog = (columnStatus: TaskStatus) => {
-    setDefaultStatus(columnStatus);
     setStatus(columnStatus);
     setTitle('');
     setDescription('');
