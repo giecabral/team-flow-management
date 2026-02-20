@@ -8,6 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -282,30 +285,30 @@ export default function TasksPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
-                  <select
-                    id="status"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value as TaskStatus)}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  >
-                    <option value="todo">To Do</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="done">Done</option>
-                  </select>
+                  <Select value={status} onValueChange={(v) => setStatus(v as TaskStatus)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todo">To Do</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="done">Done</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="priority">Priority</Label>
-                  <select
-                    id="priority"
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value as TaskPriority)}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
+                  <Select value={priority} onValueChange={(v) => setPriority(v as TaskPriority)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -323,19 +326,22 @@ export default function TasksPage() {
                 <div className="space-y-2">
                   <Label htmlFor="assignedTo">Assignee</Label>
                   {canAssignOthers ? (
-                    <select
-                      id="assignedTo"
-                      value={assignedTo}
-                      onChange={(e) => setAssignedTo(e.target.value)}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    <Select
+                      value={assignedTo || '__none__'}
+                      onValueChange={(v) => setAssignedTo(v === '__none__' ? '' : v)}
                     >
-                      <option value="">Unassigned</option>
-                      {members.map((m) => (
-                        <option key={m.userId} value={m.userId}>
-                          {m.user?.firstName} {m.user?.lastName}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Unassigned</SelectItem>
+                        {members.map((m) => (
+                          <SelectItem key={m.userId} value={m.userId}>
+                            {m.user?.firstName} {m.user?.lastName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   ) : (
                     <div className="rounded-md border border-input bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
                       {(() => {
