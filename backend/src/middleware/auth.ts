@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { verifyAccessToken } from '../utils/jwt.js';
 import * as apiResponse from '../utils/apiResponse.js';
-import type { AuthRequest } from '../types/index.js';
+import type { AuthRequest, TeamRole } from '../types/index.js';
 import db from '../config/database.js';
 
 export function authenticate(req: AuthRequest, res: Response, next: NextFunction): void {
@@ -23,6 +23,7 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
   }
 }
 
+// Verify team membership; optionally require admin role
 export function requireTeamMembership(roleRequired?: 'admin') {
   return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     const teamId = req.params.teamId || req.params.id;
@@ -36,7 +37,7 @@ export function requireTeamMembership(roleRequired?: 'admin') {
     const membership = db.prepare(`
       SELECT role FROM team_members
       WHERE team_id = ? AND user_id = ?
-    `).get(teamId, userId) as { role: 'admin' | 'member' } | undefined;
+    `).get(teamId, userId) as { role: TeamRole } | undefined;
 
     if (!membership) {
       apiResponse.forbidden(res, 'Not a team member');
@@ -45,6 +46,37 @@ export function requireTeamMembership(roleRequired?: 'admin') {
 
     if (roleRequired === 'admin' && membership.role !== 'admin') {
       apiResponse.forbidden(res, 'Admin access required');
+      return;
+    }
+
+    req.teamMembership = { role: membership.role };
+    next();
+  };
+}
+
+// Verify team membership and that the user's role is in the allowed list
+export function requireTeamRole(allowedRoles: TeamRole[]) {
+  return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    const teamId = req.params.teamId || req.params.id;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      apiResponse.unauthorized(res);
+      return;
+    }
+
+    const membership = db.prepare(`
+      SELECT role FROM team_members
+      WHERE team_id = ? AND user_id = ?
+    `).get(teamId, userId) as { role: TeamRole } | undefined;
+
+    if (!membership) {
+      apiResponse.forbidden(res, 'Not a team member');
+      return;
+    }
+
+    if (!allowedRoles.includes(membership.role)) {
+      apiResponse.forbidden(res, 'Insufficient role to perform this action');
       return;
     }
 
