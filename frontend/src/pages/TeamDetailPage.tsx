@@ -22,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from '@/components/ui/use-toast';
-import { ArrowLeft, MoreVertical, UserPlus, Trash2 } from 'lucide-react';
+import { ArrowLeft, MoreVertical, UserPlus, Trash2, LayoutKanban } from 'lucide-react';
 import type { Team, TeamMember, TeamRole, User as UserType } from '@/types';
 
 const ALL_ROLES: TeamRole[] = ['admin', 'manager', 'dev', 'guest'];
@@ -215,6 +215,10 @@ export default function TeamDetailPage() {
             <p className="text-muted-foreground mt-1">{team.description}</p>
           )}
         </div>
+        <Button variant="outline" size="sm" onClick={() => navigate(`/teams/${teamId}/tasks`)}>
+          <LayoutKanban className="h-4 w-4 mr-2" />
+          Tasks
+        </Button>
         {isAdmin && (
           <Button variant="destructive" size="sm" onClick={handleDeleteTeam}>
             <Trash2 className="h-4 w-4 mr-2" />

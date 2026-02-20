@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Users, UserCog } from 'lucide-react';
+import { LayoutDashboard, Users, UserCog, CheckSquare } from 'lucide-react';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/teams', label: 'Teams', icon: Users },
+  { to: '/my-tasks', label: 'My Tasks', icon: CheckSquare },
   { to: '/users', label: 'Users', icon: UserCog },
 ];
 
