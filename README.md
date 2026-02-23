@@ -1,6 +1,6 @@
 # TeamFlow
 
-An internal scheduling and task management application for small teams. Built as a portfolio project demonstrating full-stack development skills.
+An internal task and team management application for small teams. Built as a portfolio project demonstrating full-stack development skills.
 
 ## Tech Stack
 
@@ -18,7 +18,7 @@ An internal scheduling and task management application for small teams. Built as
 - SQLite (via better-sqlite3)
 - JWT authentication
 
-## Features (Current)
+## Features
 
 - **User Authentication**
   - Registration with email/password
@@ -27,11 +27,33 @@ An internal scheduling and task management application for small teams. Built as
   - Protected routes
 
 - **Team Management**
-  - Create teams
-  - Role-based access (admin/member)
+  - Create and delete teams
+  - Four-level role system: admin, manager, dev, guest
   - Add/remove team members
-  - Change member roles
+  - Change member roles via dropdown menu
   - Search users to invite
+
+- **Task Management**
+  - Kanban board view per team (To Do / In Progress / Done columns)
+  - Personal tasks not tied to any team
+  - Global tasks page showing all tasks across all teams
+  - Create, edit, and delete tasks
+  - Status tracking (To Do, In Progress, Done)
+  - Priority levels (Low, Medium, High)
+  - Due dates with overdue highlighting
+  - Task assignment to team members or any user
+  - Role-based assignment rules:
+    - Admin/Manager: can assign tasks to any member
+    - Dev: self-assign only
+  - Filter tasks by status and team
+
+- **Comments**
+  - Add comments to any task
+  - Edit and delete your own comments
+  - Admins can delete any comment within their team
+
+- **My Tasks**
+  - Personal view showing all tasks assigned to the current user across all teams
 
 ## Project Structure
 
@@ -46,7 +68,7 @@ team-flow-management/
 │   │   ├── services/       # Business logic
 │   │   ├── types/          # TypeScript types
 │   │   └── utils/          # Helper functions
-│   ├── sql/migrations/     # Database schema
+│   ├── sql/migrations/     # Database schema migrations
 │   └── data/               # SQLite database file
 │
 └── frontend/
@@ -54,7 +76,7 @@ team-flow-management/
         ├── components/     # React components
         │   ├── ui/         # shadcn/ui components
         │   ├── auth/       # Authentication components
-        │   └── layout/     # Layout components
+        │   └── layout/     # Layout components (sidebar, header)
         ├── context/        # React context (auth)
         ├── pages/          # Page components
         ├── services/       # API service layer
@@ -81,7 +103,7 @@ cd team-flow-management
 npm install
 ```
 
-3. Set up environment variables (optional - defaults work for development):
+3. Set up environment variables (optional — defaults work for development):
 ```bash
 # Backend (backend/.env)
 PORT=3001
@@ -122,8 +144,8 @@ This starts both backend (port 3001) and frontend (port 5173).
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/v1/auth/register` | Register new user |
-| POST | `/api/v1/auth/login` | Login user |
-| POST | `/api/v1/auth/logout` | Logout user |
+| POST | `/api/v1/auth/login` | Login |
+| POST | `/api/v1/auth/logout` | Logout |
 | POST | `/api/v1/auth/refresh` | Refresh access token |
 | GET | `/api/v1/auth/me` | Get current user |
 
@@ -139,6 +161,41 @@ This starts both backend (port 3001) and frontend (port 5173).
 | POST | `/api/v1/teams/:id/members` | Add member (admin) |
 | PATCH | `/api/v1/teams/:id/members/:userId` | Update role (admin) |
 | DELETE | `/api/v1/teams/:id/members/:userId` | Remove member (admin) |
+| GET | `/api/v1/teams/:id/users/search` | Search users to invite |
+
+### Team Tasks
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/teams/:teamId/tasks` | List team tasks |
+| POST | `/api/v1/teams/:teamId/tasks` | Create task |
+| GET | `/api/v1/teams/:teamId/tasks/:taskId` | Get task |
+| PATCH | `/api/v1/teams/:teamId/tasks/:taskId` | Update task |
+| DELETE | `/api/v1/teams/:teamId/tasks/:taskId` | Delete task |
+| GET | `/api/v1/teams/:teamId/tasks/:taskId/comments` | List comments |
+| POST | `/api/v1/teams/:teamId/tasks/:taskId/comments` | Add comment |
+| PATCH | `/api/v1/teams/:teamId/tasks/:taskId/comments/:commentId` | Edit comment |
+| DELETE | `/api/v1/teams/:teamId/tasks/:taskId/comments/:commentId` | Delete comment |
+
+### Global Tasks (personal + cross-team)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/tasks/me` | Tasks assigned to current user |
+| GET | `/api/v1/tasks` | All accessible tasks |
+| POST | `/api/v1/tasks` | Create task (team optional) |
+| GET | `/api/v1/tasks/:taskId` | Get task |
+| PATCH | `/api/v1/tasks/:taskId` | Update task |
+| DELETE | `/api/v1/tasks/:taskId` | Delete task |
+| GET | `/api/v1/tasks/:taskId/comments` | List comments |
+| POST | `/api/v1/tasks/:taskId/comments` | Add comment |
+| PATCH | `/api/v1/tasks/:taskId/comments/:commentId` | Edit comment |
+| DELETE | `/api/v1/tasks/:taskId/comments/:commentId` | Delete comment |
+
+### Users
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/users` | List users (supports `?search=`) |
+| POST | `/api/v1/users` | Create user |
+| GET | `/api/v1/users/:userId` | Get user |
 
 ## Architecture Decisions
 
@@ -151,27 +208,21 @@ This starts both backend (port 3001) and frontend (port 5173).
 ### JWT Strategy
 - **Access Token**: Short-lived (15 min), stored in memory
 - **Refresh Token**: Long-lived (7 days), stored in localStorage, rotated on each use
-- Tokens are hashed before storage for security
+- Refresh tokens are hashed before storage for security
+
+### Personal vs Team Tasks
+Tasks have a nullable `team_id`. When `team_id` is null the task is personal — only its creator and assignee can see or edit it. Team tasks are visible to all team members. The same `TaskDetailPage` handles both contexts by detecting whether `teamId` is present in the route params.
 
 ### Frontend State Management
 - React Context for authentication state
-- Local state + custom hooks for data fetching
-- No Redux/Zustand - keeping it simple for the scope
+- Local state for data fetching
+- No Redux/Zustand — keeping it simple for the scope
 
 ### Code Organization
 - Clear separation between frontend and backend
 - Service layer pattern for business logic
 - Controller layer for request handling
 - Middleware for cross-cutting concerns
-
-## Future Enhancements (Roadmap)
-
-- [ ] Task management (CRUD, assignments, status tracking)
-- [ ] Weekly schedules with time entries
-- [ ] Dashboard with activity feed
-- [ ] User profile management
-- [ ] Email notifications
-- [ ] Dark mode support
 
 ## Trade-offs
 
