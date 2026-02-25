@@ -184,7 +184,7 @@ export default function GlobalTasksPage() {
           <SelectTrigger className="w-40 text-sm">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className='bg-white'>
+          <SelectContent>
             <SelectItem value="all">All Teams</SelectItem>
             <SelectItem value="personal">Personal</SelectItem>
             {teams.map((t) => (
@@ -305,7 +305,7 @@ export default function GlobalTasksPage() {
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-white">
+                  <SelectContent>
                     <SelectItem value="low">Low</SelectItem>
                     <SelectItem value="medium">Medium</SelectItem>
                     <SelectItem value="high">High</SelectItem>
@@ -318,7 +318,7 @@ export default function GlobalTasksPage() {
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-white">
+                  <SelectContent>
                     <SelectItem value="todo">To Do</SelectItem>
                     <SelectItem value="in_progress">In Progress</SelectItem>
                     <SelectItem value="done">Done</SelectItem>
@@ -348,7 +348,7 @@ export default function GlobalTasksPage() {
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-white">
+                <SelectContent>
                   <SelectItem value="__none__">Personal (no team)</SelectItem>
                   {teams.map((t) => (
                     <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
@@ -367,7 +367,7 @@ export default function GlobalTasksPage() {
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-white">
+                <SelectContent>
                   <SelectItem value="__none__">Unassigned</SelectItem>
                   {allUsers.map((u) => (
                     <SelectItem key={u.id} value={u.id}>

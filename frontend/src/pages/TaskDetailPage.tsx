@@ -270,7 +270,7 @@ export default function TaskDetailPage() {
         <CardContent className="pt-6 space-y-5">
           {/* Status / Priority / Due / Assignee row */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div className="space-y-1.5">
+            <div className="flex flex-col space-y-1 justify-between">
               <Label className="text-xs text-muted-foreground">Status</Label>
               {isEditing ? (
                 <Select value={editStatus} onValueChange={(v) => setEditStatus(v as TaskStatus)}>
@@ -284,13 +284,13 @@ export default function TaskDetailPage() {
                   </SelectContent>
                 </Select>
               ) : (
-                <span className={`inline-block text-xs font-medium px-2 py-1 rounded-full ${STATUS_BADGE[task.status]}`}>
+                <span className={`inline-block w-fit text-xs font-medium px-2 py-1 rounded-full ${STATUS_BADGE[task.status]}`}>
                   {STATUS_LABEL[task.status]}
                 </span>
               )}
             </div>
 
-            <div className="space-y-1.5">
+            <div className="flex flex-col space-y-1 justify-between">
               <Label className="text-xs text-muted-foreground">Priority</Label>
               {isEditing ? (
                 <Select value={editPriority} onValueChange={(v) => setEditPriority(v as TaskPriority)}>
@@ -304,13 +304,13 @@ export default function TaskDetailPage() {
                   </SelectContent>
                 </Select>
               ) : (
-                <span className={`inline-block text-xs font-medium px-2 py-1 rounded-full ${PRIORITY_BADGE[task.priority]}`}>
+                <span className={`inline-block w-fit text-xs font-medium px-2 py-1 rounded-full ${PRIORITY_BADGE[task.priority]}`}>
                   {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
                 </span>
               )}
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Due Date</Label>
               {isEditing ? (
                 <Input
@@ -323,15 +323,15 @@ export default function TaskDetailPage() {
                 <p className="text-sm">
                   {task.dueDate
                     ? new Date(task.dueDate).toLocaleDateString('en-US', {
-                        month: 'short', day: 'numeric', year: 'numeric',
-                      })
+                      month: 'short', day: 'numeric', year: 'numeric',
+                    })
                     : <span className="text-muted-foreground">—</span>
                   }
                 </p>
               )}
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Assignee</Label>
               {isEditing && canEditAssignee ? (
                 <Select
@@ -345,15 +345,15 @@ export default function TaskDetailPage() {
                     <SelectItem value="__none__">Unassigned</SelectItem>
                     {isGlobal
                       ? allUsers.map((u) => (
-                          <SelectItem key={u.id} value={u.id}>
-                            {u.firstName} {u.lastName}
-                          </SelectItem>
-                        ))
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.firstName} {u.lastName}
+                        </SelectItem>
+                      ))
                       : members.map((m) => (
-                          <SelectItem key={m.userId} value={m.userId}>
-                            {m.user?.firstName} {m.user?.lastName}
-                          </SelectItem>
-                        ))}
+                        <SelectItem key={m.userId} value={m.userId}>
+                          {m.user?.firstName} {m.user?.lastName}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               ) : task.assignedUser ? (
