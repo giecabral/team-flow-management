@@ -3,7 +3,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbPath = path.resolve(__dirname, '../../data/teamflow.db');
+const dbPath = process.env.NODE_ENV === 'test'
+  ? ':memory:'
+  : path.resolve(__dirname, '../../data/teamflow.db');
 
 // Create database connection
 export const db = new Database(dbPath);
