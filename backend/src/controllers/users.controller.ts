@@ -39,3 +39,27 @@ export function getUser(req: AuthRequest, res: Response, next: NextFunction): vo
     next(error);
   }
 }
+
+// PATCH /api/v1/users/me
+export async function updateProfile(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const { firstName, lastName, email } = req.body;
+    const user = await usersService.updateProfile(userId, { firstName, lastName, email });
+    apiResponse.success(res, user);
+  } catch (error) {
+    next(error);
+  }
+}
+
+// PATCH /api/v1/users/me/password
+export async function changePassword(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const { currentPassword, newPassword } = req.body;
+    await usersService.changePassword(userId, { currentPassword, newPassword });
+    apiResponse.noContent(res);
+  } catch (error) {
+    next(error);
+  }
+}

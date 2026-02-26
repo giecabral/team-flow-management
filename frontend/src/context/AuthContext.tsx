@@ -15,6 +15,7 @@ interface AuthContextType extends AuthState {
   login: (data: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
+  updateUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -103,6 +104,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState({ user: response.user, isAuthenticated: true, isLoading: false });
   };
 
+  const updateUser = (user: User) => {
+    setState((prev) => ({ ...prev, user }));
+  };
+
   const logout = async () => {
     try {
       const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
@@ -116,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout }}>
+    <AuthContext.Provider value={{ ...state, login, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

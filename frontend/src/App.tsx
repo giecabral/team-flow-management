@@ -13,6 +13,7 @@ import TasksPage from '@/pages/TasksPage';
 import TaskDetailPage from '@/pages/TaskDetailPage';
 import MyTasksPage from '@/pages/MyTasksPage';
 import GlobalTasksPage from '@/pages/GlobalTasksPage';
+import ProfilePage from '@/pages/ProfilePage';
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
             <Route path="/my-tasks" element={<MyTasksPage />} />
             <Route path="/tasks" element={<GlobalTasksPage />} />
             <Route path="/tasks/:taskId" element={<TaskDetailPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
           </Route>
         </Route>
 

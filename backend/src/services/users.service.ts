@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../config/database.js';
-import { hashPassword } from '../utils/password.js';
+import { hashPassword, verifyPassword } from '../utils/password.js';
 import type { UserRow, User } from '../types/index.js';
 
 export function toUser(row: UserRow): User {
@@ -70,4 +70,45 @@ export function listUsers(search?: string): User[] {
 export function getUserById(userId: string): User | null {
   const row = db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as UserRow | undefined;
   return row ? toUser(row) : null;
+}
+
+interface UpdateProfileData {
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+export async function updateProfile(userId: string, data: UpdateProfileData): Promise<User> {
+  const emailTaken = db.prepare('SELECT id FROM users WHERE email = ? AND id != ?').get(data.email, userId);
+  if (emailTaken) {
+    throw Object.assign(new Error('Email already in use'), { statusCode: 409, code: 'EMAIL_EXISTS' });
+  }
+
+  db.prepare(`
+    UPDATE users SET first_name = ?, last_name = ?, email = ?, updated_at = datetime('now')
+    WHERE id = ?
+  `).run(data.firstName, data.lastName, data.email, userId);
+
+  const row = db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as UserRow;
+  return toUser(row);
+}
+
+interface ChangePasswordData {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export async function changePassword(userId: string, data: ChangePasswordData): Promise<void> {
+  const row = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(userId) as { password_hash: string } | undefined;
+  if (!row) {
+    throw Object.assign(new Error('User not found'), { statusCode: 404, code: 'NOT_FOUND' });
+  }
+
+  const valid = await verifyPassword(data.currentPassword, row.password_hash);
+  if (!valid) {
+    throw Object.assign(new Error('Current password is incorrect'), { statusCode: 400, code: 'INVALID_PASSWORD' });
+  }
+
+  const newHash = await hashPassword(data.newPassword);
+  db.prepare(`UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?`).run(newHash, userId);
 }
