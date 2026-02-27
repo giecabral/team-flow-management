@@ -224,6 +224,12 @@ Tasks have a nullable `team_id`. When `team_id` is null the task is personal —
 - Controller layer for request handling
 - Middleware for cross-cutting concerns
 
+## AI Assistance Disclaimer
+
+Parts of this project were developed with the assistance of AI tools. AI was used to help generate portions of the documentation, suggest implementation approaches, and assist in creating and structuring test cases.
+
+All AI-generated content was reviewed, validated, and adapted to ensure correctness, security, and alignment with the project’s architectural decisions. Final design decisions, implementation details, and code integration were performed and verified manually.
+
 ## Trade-offs
 
 1. **SQLite vs PostgreSQL**: Chose SQLite for simplicity. For production, would use PostgreSQL for better concurrent access and advanced features.
